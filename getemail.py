@@ -1,75 +1,41 @@
-import threading
-import requests
-from datetime import datetime
+import time
 import eventlet
+import requests
+from threading import current_thread
+from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from extract_emails import EmailExtractor
 from extract_emails.browsers import RequestsBrowser
-#Create and configure logger
-# logging.basicConfig(level=logging.DEBUG)
-  
-# #Creating an object
-# logger=logging.getLogger()
-  
-# #Setting the threshold of logger to DEBUG
-# logger.setLevel(logging.DEBUG)
+import logging
+
+# تنظیمات برای لاگ info
+logging.basicConfig(filename='info.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%Y %H:%M:%S', level=logging.INFO)
+logger_info = logging.getLogger('info')
+
+# تنظیمات برای لاگ error
+logging.basicConfig(filename='error.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%Y %H:%M:%S', level=logging.ERROR)
+logger_error = logging.getLogger('error')
+
 exmaili = []
-def foo():
-    data = {'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3'}
-    with open('Urls/ExtactUrlRiceKerman.txt', 'r') as f:
-        line = f.readlines()
-    start = datetime.now()
-    for l in line[0:12]:
+should_stop = False  # این متغیر نشان می‌دهد که آیا برنامه باید متوقف شود یا نه
+
+start = time.perf_counter()
+
+def foo(name):
+    global should_stop  # اعلام می‌کند که از متغیر سراسری استفاده می‌شود
+    data = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3'}
+    
+    with open('Urls/ExtractUrlNezamMohandesiKerman.txt', 'r') as f:
+        lines = f.readlines()
+
+    for l in lines:
         with eventlet.Timeout(2):
             try:
-                r = requests.get(l.strip(),headers=data,timeout= 2)
-            
-                if(r.status_code == 200):
-                    # print(r,t.getName())
-                    soup = BeautifulSoup(r.content, "html.parser")
-                    ltags = soup.find_all("a")
-                    try:
-                        for tag in ltags:
-                            lhref = tag.get("href")
-                            with RequestsBrowser() as browser:
-                                email_extractor = EmailExtractor(lhref, browser, depth=2)
-                                emails = email_extractor.get_emails()
-                                for email in emails:
-                                    print(email.as_dict(),t.getName())
-                                    exmai = email.as_dict()["email"]
-                                    if not exmai in exmaili:
-                                        exmaili.append(exmai)
-                                        with open('Emails/ExtactEmailRiceKerman.txt', 'a') as emailwrite:
-                                            emailwrite.writelines(email.as_dict().get('email') + '\n')
-                                    print(exmai)
-
-                         
-                    except Exception as err:
-                        print(err)
-
-            except:
-                pass
+                if should_stop:  # بررسی می‌کند آیا برنامه باید متوقف شود یا نه
+                    break  # خروج از حلقه اگر برنامه باید متوقف شود
                 
-        pass
-  
-    end =  datetime.now()
-    print("result of time is:", end-start, t.getName())
-
-if __name__ == "__main__":
-    t = threading.Thread(target = foo, name="Siyamak" )
-  
-def bar():
-    data = {'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3'}
-    with open('Urls/ExtactUrlRiceKerman.txt', 'r') as f:
-        line = f.readlines()
-    start = datetime.now()
-
-    for l in line[12:24]:
-        with eventlet.Timeout(2):
-            try:
-                r = requests.get(l.strip(),headers=data,timeout= 2)
-                # print(r,t2.getName())
-                if(r.status_code == 200):
+                r = requests.get(l.strip(), headers=data, timeout=2)
+                if r.status_code == 200:
                     soup = BeautifulSoup(r.content, "html.parser")
                     ltags = soup.find_all("a")
                     try:
@@ -79,117 +45,31 @@ def bar():
                                 email_extractor = EmailExtractor(lhref, browser, depth=2)
                                 emails = email_extractor.get_emails()
                                 for email in emails:
-                                    print(email.as_dict(),t2.getName())
                                     exmai = email.as_dict()["email"]
-                                    if not exmai in exmaili:
+                                    if exmai not in exmaili:
                                         exmaili.append(exmai)
-                                        with open('Emails/ExtactEmailRiceKerman.txt', 'a') as emailwrite:
+                                        with open('Emails/ExtractEmailNezamMohandesiKerman.txt', 'a') as emailwrite:
                                             emailwrite.writelines(email.as_dict().get('email') + '\n')
-                                    print(exmai)
+                                    print(f"{exmai} - {current_thread().name}")
+                                    logger_info.info(f"{exmai} - {current_thread().name}")
                              
                     except Exception as err:
                         print(err)
-
+                        logger_error(f"{err} - {current_thread().name}")
             except:
                 pass
-                
-        pass
-  
-    end =  datetime.now()
-    print("result of time is:", end-start,t2.getName())
 
-if __name__ == "__main__":
-    t2 = threading.Thread(target = bar,name="diyana")
-  
-def mar():
-    data = {'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3'}
-    with open('Urls/ExtactUrlRiceKerman.txt', 'r') as f:
-        line = f.readlines()
-    start = datetime.now()
+# تابعی برای متوقف کردن برنامه
+def stop_program():
+    global should_stop
+    should_stop = True
 
-    for l in line[24:34]:
-        with eventlet.Timeout(2):
-            try:
-                r = requests.get(l.strip(),headers=data,timeout= 2)
-                # print(r,t3.getName())
-                if(r.status_code == 200):
-                    soup = BeautifulSoup(r.content, "html.parser")
-                    ltags = soup.find_all("a")
-                    try:
-                        for tag in ltags:
-                            lhref = tag.get("href")
-                            with RequestsBrowser() as browser:
-                                email_extractor = EmailExtractor(lhref, browser, depth=2)
-                                emails = email_extractor.get_emails()
-                                for email in emails:
-                                    print(email.as_dict(),t3.getName())
-                                    exmai = email.as_dict()["email"]
-                                    if not exmai in exmaili:
-                                        exmaili.append(exmai)
-                                        with open('Emails/ExtactEmailRiceKerman.txt', 'a') as emailwrite:
-                                            emailwrite.writelines(email.as_dict().get('email') + '\n')
-                                    print(exmai)
-                                   
-                                
-                    except Exception as err:
-                        print(err)
+with ThreadPoolExecutor() as executor:
+    names = ["one", "two", "three", "four", 'five', 'six', 'seven', 'eight']
+    executor.map(foo, names)
 
-            except:
-                pass
-                
-        pass
-  
-    end =  datetime.now()
-    print("result of time is:", end-start,t3.getName())
+# فراخوانی تابع برای متوقف کردن برنامه
+stop_program()
 
-if __name__ == "__main__":
-    t3 = threading.Thread(target = mar,name="sami") 
-   
-def mar():
-    data = {'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3'}
-    with open('Urls/ExtactUrlRiceKerman.txt', 'r', encoding="utf-8") as f:
-        line = f.readlines()
-    start = datetime.now()
-
-    for l in line[34::]:
-        with eventlet.Timeout(2):
-            try:
-                r = requests.get(l.strip(),headers=data,timeout= 2)
-                # print(r,t4.getName())
-                if(r.status_code == 200):
-                    soup = BeautifulSoup(r.content, "html.parser")
-                    ltags = soup.find_all("a")
-                    try:
-                        for tag in ltags:
-                            lhref = tag.get("href")
-                            with RequestsBrowser() as browser:
-                                email_extractor = EmailExtractor(lhref, browser, depth=2)
-                                emails = email_extractor.get_emails()
-                                for email in emails:
-                                    print(email.as_dict(),t4.getName())
-                                    exmai = email.as_dict()["email"]
-                                    if not exmai in exmaili:
-                                        exmaili.append(exmai)
-                                        with open('Emails/ExtactEmailRiceKerman.txt', 'a') as emailwrite:
-                                            emailwrite.writelines(email.as_dict().get('email') + '\n')
-                                
-                                    print(exmai)
-                    except Exception as err:
-                        print(err)
-
-            except:
-                pass
-                
-        pass
-  
-    end =  datetime.now()
-    print("result of time is:", end-start,t4.getName())
-
-if __name__ == "__main__":
-    t4 = threading.Thread(target = mar,name="maman") 
-    t4.start()
-    t3.start()
-    t2.start()
-    t.start()
-  
-
+end = time.perf_counter()
+print("نتیجه زمان:", end - start, current_thread().name)
