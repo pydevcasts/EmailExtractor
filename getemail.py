@@ -65,7 +65,7 @@ def stop_program():
     should_stop = True
 
 with ThreadPoolExecutor() as executor:
-    names = ["one", "two", "three", "four", 'five', 'six', 'seven', 'eight']
+    names = ["one", "two", "three", "four", 'five', 'six', 'seven', 'eight','eight']
     executor.map(foo, names)
 
 # فراخوانی تابع برای متوقف کردن برنامه
