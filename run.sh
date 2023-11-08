@@ -1,1 +1,1 @@
-python SMS/sms.py
+python SMS/main.py

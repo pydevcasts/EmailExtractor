@@ -2,7 +2,6 @@ from tkinter import *
 import asyncio
 from googlesearch import search
 import requests
-import asyncio
 import re
 from cleardata import clearData
 import sqlite3
@@ -29,15 +28,15 @@ root = Tk()
 root.title("PHONE BANK")
 root.geometry("500x500")
 
-query_label =Label(root, text="ENTER KEYWORD:") 
-query_label.pack() 
+query_label =Label(root, text="ENTER KEYWORD:",  height=2) 
+query_label.pack(fill='x') 
 
-query_entry = Entry(root) 
+query_entry = Entry(root, justify="right", width=25, font=("calibri 15 italic"), cursor="pencil", selectbackground="red", selectforeground="green") 
 query_entry.pack() 
 
 
-search_button =Button(root, text="Search", bg='green',fg="white",command=lambda: search_button_click(query_entry, output_text)) 
-search_button.pack() 
+search_button =Button(root, text="Search",border=4, bg='green',fg="white",command=lambda: search_button_click(query_entry, output_text)) 
+search_button.pack(pady=10) 
 
 output_text = Text(root, height=300, width=100) 
 output_text.pack() 
@@ -48,8 +47,6 @@ c.execute('''
         CREATE TABLE IF NOT EXISTS phone_numbers
         (url TEXT, mobile_numbers TEXT, city_numbers TEXT)
         ''') 
-
-
 
 
 async def fetch(url):
