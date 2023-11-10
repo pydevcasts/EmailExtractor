@@ -1,9 +1,12 @@
 import sqlite3
-def clearData():
+
+
+async def clearData():
+    
     try:
-        conn = sqlite3.connect('SMS/sqlit.db')
+        conn = sqlite3.connect('SMS/sqlite.db')
         cur = conn.cursor()
-        cur.execute('DROP TABLE IF EXISTS  phone_numbers')
+        await cur.execute('DROP TABLE IF EXISTS  phone_numbers')
         conn.commit()
     except:
         print("not exits")
