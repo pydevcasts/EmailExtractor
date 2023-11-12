@@ -1,1 +1,1 @@
-python SMS/main.py
+python Dashbopard/TkinterDashboard/dashboard.py
