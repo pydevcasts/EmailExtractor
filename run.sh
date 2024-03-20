@@ -1,1 +1,0 @@
-python Dashbopard/TkinterDashboard/dashboard.py
